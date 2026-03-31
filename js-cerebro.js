@@ -61,11 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- PROTEÇÃO DE ACESSO ---
 function verificarAcesso() {
-    // Se NÃO estiver na página de login (index.html) e não tiver sessão ativa, chuta pra fora!
-    if (!window.location.href.includes('index.html') && !window.location.href.includes('avaliacao.html')) {
+    // Se NÃO estiver na página de login (index.php) e não tiver sessão ativa, chuta pra fora!
+    if (!window.location.href.includes('index.php') && !window.location.href.includes('avaliacao.html')) {
         const sessao = localStorage.getItem('psi_gro_sessao');
         if (!sessao || sessao !== 'ativo') {
-            window.location.href = 'index.html'; // Volta pro login
+            window.location.href = 'index.php'; // Volta pro login
         }
     }
 }
@@ -73,7 +73,7 @@ function verificarAcesso() {
 function logout() {
     localStorage.removeItem('psi_gro_sessao');
     localStorage.removeItem('psi_gro_email_logado');
-    window.location.href = 'index.html'; // Volta pro login
+    window.location.href = 'index.php'; // Volta pro login
 }
 
 verificarAcesso();
