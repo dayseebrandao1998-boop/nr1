@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PGR - Indústria Exemplo S/A</title>
+    
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <!-- Biblioteca de Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #003366; 
+            --secondary-color: #00509e;
+            --text-main: #202124;
+            --text-muted: #5f6368;
+            --bg-body: #f1f3f4;
+            --bg-card: #ffffff;
+            --border-solid: #dadce0;
+            
+            /* Cores de Risco Ocupacional Padrão AIHA */
+            --risk-low: #81c784;
+            --risk-med: #ffd54f;
+            --risk-high: #ff8a65;
+            --risk-critical: #e57373;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .document-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: var(--bg-card);
+            margin: 20px auto;
+            padding: 15mm 20mm;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* CABEÇALHO */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .company-branding {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .company-branding svg {
+            width: 50px;
+            height: 50px;
+            fill: var(--primary-color);
+        }
+
+        .company-name {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-meta {
+            text-align: right;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .doc-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .doc-title h1 {
+            font-size: 20px;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .doc-title p {
+            font-size: 12px;
+            font-style: italic;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* TÍTULOS DE SEÇÃO */
+        h2 {
+            font-size: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-solid);
+            padding-bottom: 5px;
+            margin: 30px 0 15px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .material-icons-outlined { font-size: 18px; color: var(--secondary-color); }
+
+        /* ESTILO CARDS E DADOS TÉCNICOS */
+        .tech-card {
+            background: #fafafa;
+            border: 1px solid var(--border-solid);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 20px;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .data-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .data-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12.5px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        /* RESPONSABILIDADES */
+        .roles-list {
+            font-size: 11.5px;
+            color: var(--text-main);
+            padding-left: 20px;
+            text-align: justify;
+        }
+        .roles-list li { margin-bottom: 8px; }
+        .roles-list strong { color: var(--primary-color); }
+
+        /* DASHBOARD DE RISCOS: GRÁFICO E MATRIZ */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        .dash-box {
+            border: 1px solid var(--border-solid);
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+            background: #ffffff;
+        }
+
+        .dash-box h3 {
+            font-size: 12.5px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        /* MATRIZ DE RISCO CSS */
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: auto repeat(5, 1fr);
+            gap: 2px;
+            align-items: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 10px;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 260px;
+        }
+        .y-axis { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font-weight: bold; color: var(--text-muted); }
+        .x-axis { grid-column: 2 / 7; text-align: center; font-weight: bold; margin-top: 5px; color: var(--text-muted); }
+        .cell { padding: 8px 0; font-weight: bold; color: rgba(0,0,0,0.6); border-radius: 2px; }
+        .c-low { background-color: var(--risk-low); }
+        .c-med { background-color: var(--risk-med); }
+        .c-high { background-color: var(--risk-high); }
+        .c-crit { background-color: var(--risk-critical); }
+
+        /* LEGENDA TÉCNICA (Substituindo o código preto) */
+        .matrix-legend {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px dashed var(--border-solid);
+            border-radius: 4px;
+            font-size: 10.5px;
+            text-align: left;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .matrix-legend strong { color: var(--text-main); }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 9px; margin-right: 3px; color: #fff; text-transform: uppercase;}
+        .bg-low { background: var(--risk-low); color: #333; }
+        .bg-med { background: var(--risk-med); color: #333; }
+        .bg-high { background: var(--risk-high); color: #fff;}
+        .bg-crit { background: var(--risk-critical); color: #fff; }
+
+        /* RESUMO POR SETOR */
+        .sector-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .sector-card {
+            border: 1px solid var(--border-solid);
+            border-radius: 4px;
+            padding: 12px;
+            background: #fafafa;
+        }
+
+        .sector-title { font-size: 11px; font-weight: 700; margin-bottom: 5px; color: var(--primary-color); text-transform: uppercase; }
+        .sector-risk { font-size: 10.5px; color: var(--text-muted); line-height: 1.3;}
+        .sector-count { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: bold; color: var(--text-main); margin-top: 8px; display: flex; align-items: center; gap: 4px;}
+
+        /* TABELAS EXTENSAS */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 1px solid var(--border-solid);
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        td { font-family: 'Roboto', sans-serif; color: var(--text-main); }
+        td.mono { font-family: 'Roboto Mono', monospace; text-align: center; font-weight: 500; }
+        
+        .highlight-text { font-weight: bold; color: var(--primary-color); }
+
+        .t-low { color: #2e7d32; font-weight: bold; }
+        .t-med { color: #f57f17; font-weight: bold; }
+        .t-high { color: #c62828; font-weight: bold; }
+        .t-crit { color: #b71c1c; font-weight: bold; }
+
+        /* PARECER TÉCNICO */
+        .text-block {
+            font-size: 11.5px;
+            text-align: justify;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        .text-block h3 {
+            font-size: 12px;
+            color: var(--secondary-color);
+            margin: 15px 0 5px 0;
+            text-transform: uppercase;
+        }
+
+        .signatures {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-around;
+            page-break-inside: avoid;
+            padding: 0 20px;
+        }
+
+        .signature-line {
+            width: 220px;
+            border-top: 1px solid var(--text-main);
+            text-align: center;
+            font-size: 11px;
+            padding-top: 5px;
+            color: var(--text-main);
+        }
+
+        /* MODO IMPRESSÃO PDF */
+        @media print {
+            body { background: none; }
+            .document-container { margin: 0; padding: 0; box-shadow: none; width: 100%; }
+            @page { margin: 15mm; }
+            .dash-box { border: 1px solid #ccc; }
+            .sector-card { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+    
+    <!-- Cabeçalho -->
+    <header>
+        <div class="company-branding">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+            </svg>
+            <div class="company-name">Indústria Exemplo S/A</div>
+        </div>
+        <div class="doc-meta">
+            <div>CÓDIGO DOC: <strong>PGR-001/2026-REV00</strong></div>
+            <div>DATA DA EMISSÃO: <strong>30/03/2026</strong></div>
+            <div>VALIDADE LEGAL: <strong>30/03/2028</strong></div>
+        </div>
+    </header>
+
+    <div class="doc-title">
+        <h1>PROGRAMA DE GERENCIAMENTO DE RISCOS (PGR)</h1>
+        <p>Desenvolvido em estrito atendimento à NR-01 (Portaria SEPRT nº 6.730/2020) e integração com o GRO.</p>
+    </div>
+
+    <!-- 1. Dados da Organização -->
+    <h2><span class="material-icons-outlined">business</span> 1. Identificação da Organização</h2>
+    <div class="tech-card">
+        <div class="data-grid">
+            <div class="data-item">
+                <span class="data-label">Razão Social</span>
+                <span class="data-val">Indústria Exemplo de Usinagem e Manufatura S/A</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">CNPJ / Inscrição Estadual</span>
+                <span class="data-val">00.000.000/0001-00 | I.E. 123.456.789</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">CNAE Principal e Descrição</span>
+                <span class="data-val">25.39-0-01 - Serviços de Usinagem, Tornearia e Solda</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">Grau de Risco (Conforme NR-04)</span>
+                <span class="data-val">Grau de Risco 3 (Dimensionamento SESMT exigido)</span>
+            </div>
+            <div class="data-item" style="grid-column: span 2;">
+                <span class="data-label">Efetivo Operacional Total / Endereço da Instalação Fixo</span>
+                <span class="data-val">142 Funcionários Diretos | Av. Parque Industrial, 1000 - Distrito Industrial - SP</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Papéis e Responsabilidades -->
+    <h2><span class="material-icons-outlined">gavel</span> 2. Governança e Diretrizes do GRO</h2>
+    <ul class="roles-list">
+        <li><strong>Alta Direção / Empregador:</strong> Implementar e custear o Gerenciamento de Riscos Ocupacionais (GRO). Fornecer recursos estruturais e financeiros para a execução integral das medidas preventivas e corretivas listadas no Plano de Ação deste PGR.</li>
+        <li><strong>Serviço Especializado (SESMT) / Consultoria de Engenharia:</strong> Conduzir a identificação de perigos, quantificação de agentes ambientais (LTCAT/NR-15) e alimentar a Matriz de Risco. Monitorar a eficácia dos EPIs e EPCs adotados.</li>
+        <li><strong>Supervisores Operacionais:</strong> Garantir a adesão aos Procedimentos Operacionais Padrão (POPs) de segurança. Inspecionar o uso obrigatório e correto de equipamentos de proteção por parte dos liderados.</li>
+        <li><strong>Trabalhadores:</strong> Zelar pela própria segurança e de terceiros. Cumprir as normas regulamentadoras vigentes e exercer, quando aplicável, o <em>Direito de Recusa</em> perante situação de Risco Grave e Iminente (RGI).</li>
+    </ul>
+
+    <!-- 3. Dashboard Analítico -->
+    <h2><span class="material-icons-outlined">insights</span> 3. Mapeamento Estatístico e Metodologia de Risco</h2>
+    
+    <div class="dashboard-grid">
+        <!-- Matriz de Risco -->
+        <div class="dash-box">
+            <h3>Matriz de Avaliação (Sev. x Prob.)</h3>
+            <div class="risk-matrix">
+                <!-- Linha 1 -->
+                <div class="y-axis" style="grid-row: 1 / 6;">Severidade &rarr;</div>
+                <div class="cell c-med"></div><div class="cell c-high"></div><div class="cell c-crit"></div><div class="cell c-crit"></div><div class="cell c-crit">X</div>
+                <!-- Linha 2 -->
+                <div class="cell c-low"></div><div class="cell c-med"></div><div class="cell c-high">X</div><div class="cell c-crit"></div><div class="cell c-crit"></div>
+                <!-- Linha 3 -->
+                <div class="cell c-low"></div><div class="cell c-low"></div><div class="cell c-med"></div><div class="cell c-high"></div><div class="cell c-crit"></div>
+                <!-- Linha 4 -->
+                <div class="cell c-low">X</div><div class="cell c-low"></div><div class="cell c-low"></div><div class="cell c-med"></div><div class="cell c-high"></div>
+                <!-- Linha 5 -->
+                <div class="cell c-low"></div><div class="cell c-low"></div><div class="cell c-low"></div><div class="cell c-low"></div><div class="cell c-med"></div>
+                <!-- Eixo X -->
+                <div class="x-axis">Probabilidade &rarr;</div>
+            </div>
+            
+            <!-- Legenda Técnica Substituindo o Código -->
+            <div class="matrix-legend">
+                <strong>Metodologia Aplicada:</strong> BS 8800 adaptada (Matriz 5x5). O Nível de Risco (NR) é determinado pelo produto da Probabilidade (P) pela Severidade (S) da lesão ou agravo à saúde.<br><br>
+                <strong>Tolerabilidade:</strong><br>
+                <span class="badge bg-low">Baixo (1-4)</span> Aceitável. Manter controles.<br>
+                <span class="badge bg-med">Médio (5-9)</span> Atenção. Adotar medidas a médio prazo.<br>
+                <span class="badge bg-high">Alto (10-16)</span> Intolerável. Intervenção a curto prazo.<br>
+                <span class="badge bg-crit">Crítico (>16)</span> Parada Imediata. RGI constatado.
+            </div>
+        </div>
+
+        <!-- Gráfico de Pizza -->
+        <div class="dash-box">
+            <h3>Distribuição Global por Categoria de Agente</h3>
+            <div style="width: 100%; height: 210px; position: relative; display: flex; justify-content: center;">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards por Setor -->
+    <div class="sector-grid">
+        <div class="sector-card" style="border-top: 3px solid var(--primary-color);">
+            <div class="sector-title">Usinagem Pesada</div>
+            <div class="sector-risk">Predominância: Ruído / Vibração</div>
+            <div class="sector-count"><span class="material-icons-outlined">engineering</span> 45 Colab.</div>
+        </div>
+        <div class="sector-card" style="border-top: 3px solid var(--risk-high);">
+            <div class="sector-title">Cabines de Pintura</div>
+            <div class="sector-risk">Predominância: Agentes Químicos</div>
+            <div class="sector-count"><span class="material-icons-outlined">masks</span> 18 Colab.</div>
+        </div>
+        <div class="sector-card" style="border-top: 3px solid var(--risk-med);">
+            <div class="sector-title">Expedição e Logística</div>
+            <div class="sector-risk">Predominância: Biomecânico (Ergo)</div>
+            <div class="sector-count"><span class="material-icons-outlined">inventory_2</span> 35 Colab.</div>
+        </div>
+        <div class="sector-card" style="border-top: 3px solid var(--risk-low);">
+            <div class="sector-title">Administrativo</div>
+            <div class="sector-risk">Predominância: Postura Estática</div>
+            <div class="sector-count"><span class="material-icons-outlined">desktop_windows</span> 44 Colab.</div>
+        </div>
+    </div>
+
+    <!-- 4. Inventário de Riscos -->
+    <h2 style="page-break-before: always;"><span class="material-icons-outlined">view_list</span> 4. Inventário Geral de Riscos Ocupacionais (IGRO)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 15%;">Setor / GHE</th>
+                <th style="width: 15%;">Perigo (Agente)</th>
+                <th style="width: 20%;">Fonte Geradora / Trajetória</th>
+                <th style="width: 15%;">Danos à Saúde</th>
+                <th style="width: 25%;">Controles Existentes (EPI/EPC/ADM)</th>
+                <th style="width: 10%;">Avaliação (P x S)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Usinagem</strong><br>GHE-01: Op. CNC</td>
+                <td><span class="highlight-text">Físico</span><br>Ruído Contínuo</td>
+                <td>Atrito da ferramenta de corte e motores dos tornos (Nível de Ação: Lavg 92.4 dB(A)).</td>
+                <td>PAIR (Perda Auditiva), estresse, zumbido crônico.</td>
+                <td><strong>EPI:</strong> Protetor Auditivo Concha C.A. 33.000 (NRF 22dB).<br><strong>ADM:</strong> Exames audiométricos anuais (PCMSO).</td>
+                <td class="mono"><span class="t-med">MÉDIO</span><br>(3 x 3 = 9)</td>
+            </tr>
+            <tr>
+                <td><strong>Pintura Industrial</strong><br>GHE-03: Pintor</td>
+                <td><span class="highlight-text">Químico</span><br>Vapores Orgânicos</td>
+                <td>Pulverização de tintas poliuretano, contendo Tolueno e Xileno (Vias aéreas e derme).</td>
+                <td>Narcose, dermatites de contato, danos hepáticos crônicos.</td>
+                <td><strong>EPC:</strong> Cabine com cortina d'água (vazão deficiente).<br><strong>EPI:</strong> Respirador semifacial filtro VO (C.A. 4115).</td>
+                <td class="mono"><span class="t-high">ALTO</span><br>(4 x 4 = 16)</td>
+            </tr>
+            <tr>
+                <td><strong>Expedição</strong><br>GHE-04: Estoquista</td>
+                <td><span class="highlight-text">Ergonômico</span><br>Levantamento Manual</td>
+                <td>Coleta e empilhamento de peças metálicas usinadas pesando até 35kg (Acima do limite NIOSH).</td>
+                <td>Lombalgias severas, DORT, hérnia de disco extrusa.</td>
+                <td><strong>ADM:</strong> Rodízio de tarefas e ginástica laboral esporádica.<br>Ausência de auxílio mecânico no setor 02.</td>
+                <td class="mono"><span class="t-high">ALTO</span><br>(5 x 3 = 15)</td>
+            </tr>
+            <tr>
+                <td><strong>Manutenção</strong><br>GHE-05: Mecânico</td>
+                <td><span class="highlight-text">Acidente</span><br>Prensamento</td>
+                <td>Manutenção em engrenagens móveis de esteiras transportadoras sem intertravamento.</td>
+                <td>Fraturas de membros superiores, esmagamento, amputação.</td>
+                <td><strong>EPC:</strong> Proteções fixas parciais.<br><strong>ADM:</strong> Procedimento LOTO (Lockout/Tagout) em fase de testes.</td>
+                <td class="mono"><span class="t-med">MÉDIO</span><br>(2 x 4 = 8)</td>
+            </tr>
+            <tr>
+                <td><strong>Administrativo</strong><br>GHE-07: Analista</td>
+                <td><span class="highlight-text">Ergonômico</span><br>Postura Estática</td>
+                <td>Trabalho contínuo em terminais de vídeo (VDT) por mais de 6 horas diárias.</td>
+                <td>Fadiga visual, mialgia cervical, tendinite de punho.</td>
+                <td><strong>EPC/ADM:</strong> Mobiliário padrão conforme NR-17. Pausas visuais orientadas.</td>
+                <td class="mono"><span class="t-low">BAIXO</span><br>(2 x 2 = 4)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- 5. Plano de Ação -->
+    <h2><span class="material-icons-outlined">task_alt</span> 5. Plano de Ação Preventiva e Corretiva (Cronograma)</h2>
+    <p class="text-block" style="margin-bottom: 15px;">Conforme os critérios de tolerabilidade, as ações abaixo focam primariamente na neutralização dos riscos classificados como <strong>ALTOS</strong>, respeitando a hierarquia das medidas de controle da NR-01 (Eliminação > Substituição > Controle de Engenharia > Administrativo > EPI).</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Meta / Ação a ser Adotada (O Quê)</th>
+                <th style="width: 20%;">Justificativa (Por Quê)</th>
+                <th style="width: 15%;">Responsável (Quem)</th>
+                <th style="width: 15%;">Prazo (Quando)</th>
+                <th style="width: 15%;">Status Atual</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Melhoria de EPC (Pintura):</strong> Retrofit do sistema de exaustão localizada (LEVs) das cabines de pintura.</td>
+                <td>Reduzir concentração de vapores orgânicos na zona de respiração. Risco Alto.</td>
+                <td>Engenharia de Manutenção</td>
+                <td class="mono">15/07/2026</td>
+                <td style="font-weight:bold; color:#f57f17;">Aguardando Peças</td>
+            </tr>
+            <tr>
+                <td><strong>Solução Ergonômica (Expedição):</strong> Aquisição de 04 mesas pantográficas e 02 talhas pneumáticas.</td>
+                <td>Eliminar a necessidade de içamento manual de cargas >20kg. Risco Alto.</td>
+                <td>Gerência de Suprimentos</td>
+                <td class="mono">30/08/2026</td>
+                <td style="font-weight:bold; color:#1565c0;">Em Cotação</td>
+            </tr>
+            <tr>
+                <td><strong>Adequação NR-12 (Usinagem):</strong> Instalar sensores de intertravamento em portas de proteção dos Tornos.</td>
+                <td>Prevenir acidentes por contato com partes rotativas.</td>
+                <td>SESMT corporativo</td>
+                <td class="mono">30/10/2026</td>
+                <td style="font-weight:bold; color:#424242;">Planejado</td>
+            </tr>
+            <tr>
+                <td><strong>Treinamento (Manutenção):</strong> Certificação oficial de 100% da equipe no padrão de Bloqueio e Etiquetagem (LOTO).</td>
+                <td>Garantir desenergização total durante intervenções mecânicas.</td>
+                <td>Recursos Humanos</td>
+                <td class="mono">15/05/2026</td>
+                <td style="font-weight:bold; color:#2e7d32;">Concluído 80%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- 6. Parecer Técnico Final -->
+    <h2><span class="material-icons-outlined">verified</span> 6. Parecer Técnico Conclusivo e Laudo de Avaliação</h2>
+    <div class="text-block">
+        <h3>6.1. Metodologia e Constatações de Campo</h3>
+        <p>A avaliação técnica de Segurança e Saúde do Trabalho (SST) foi conduzida nas instalações da <strong>Indústria Exemplo S/A</strong> através de inspeções in loco, entrevistas com operadores e análise de dados quantitativos de higiene ocupacional (dosimetrias e avaliações químicas prévias). A metodologia de categorização atendeu rigorosamente os critérios estabelecidos pela Nova NR-01, promovendo a integração sistêmica com o PCMSO (Programa de Controle Médico de Saúde Ocupacional).</p>
+        
+        <h3>6.2. Análise Crítica do Inventário</h3>
+        <p>A auditoria revela que o ambiente produtivo apresenta conformidade parcial com a legislação vigente. As exposições de maior criticidade residem na movimentação manual de cargas (Expedição) e na inalação de compostos orgânicos voláteis (Pintura), ambos pontuando Nível de Risco <strong>ALTO</strong>. Notou-se que a empresa possui uma forte cultura de fornecimento de EPIs, no entanto, para o cumprimento da conformidade legal plena, é imperativa a transição para medidas de Proteção Coletiva (EPC), conforme ditado no Plano de Ação.</p>
+
+        <h3>6.3. Termo de Responsabilidade e Vigência</h3>
+        <p>As informações contidas neste Programa de Gerenciamento de Riscos refletem as condições reais do ambiente na data de sua elaboração. A empresa contratante assume a inteira responsabilidade legal e financeira para a execução dos cronogramas propostos. Este documento tem validade base de 02 (dois) anos, expirando em 30 de Março de 2028, devendo ser submetido a revisões extraordinárias em casos de alterações tecnológicas, mudanças de layout estrutural, ou ocorrência de acidentes graves.</p>
+    </div>
+
+    <!-- Assinaturas -->
+    <div class="signatures">
+        <div class="signature-line">
+            <strong>João S. Machado - Esp. SST</strong><br>
+            Engenheiro de Segurança do Trabalho<br>
+            CREA: 123456/SP - MTE: 98765
+        </div>
+        <div class="signature-line">
+            <strong>Carlos Alberto Nogueira</strong><br>
+            Diretor de Operações Industriais<br>
+            Indústria Exemplo S/A
+        </div>
+    </div>
+
+</div>
+
+<!-- Script para renderizar o Gráfico de Pizza profissional -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    'Riscos Físicos (Ruído, Vibração)', 
+                    'Riscos Químicos (Gases, Vapores)', 
+                    'Riscos Ergonômicos (Postura, Carga)', 
+                    'Riscos de Acidentes (Mecânicos)'
+                ],
+                datasets: [{
+                    data: [35, 20, 30, 15],
+                    backgroundColor: [
+                        '#003366', /* Azul primário */
+                        '#ff8a65', /* Laranja/Vermelho (Químico) */
+                        '#ffd54f', /* Amarelo (Ergo) */
+                        '#81c784'  /* Verde (Acidente) */
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: { size: 10.5, family: "'Roboto', sans-serif" },
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '65%' // Rosca mais fina e moderna
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
