@@ -29,96 +29,164 @@
 </head>
 <body>
 
-    <!-- Overlay de Carregamento -->
     <div id="loader-overlay">
         <div class="spinner"></div>
         <p style="margin-top: 20px; font-weight: bold; letter-spacing: 1px;">AUTENTICANDO...</p>
     </div>
 
-    <!-- Áudio de Loading (URL de exemplo - você pode trocar pelo seu arquivo) -->
     <audio id="audioLoading" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
 
     <div class="login-card">
         <i class="fa-solid fa-brain login-logo"></i>
         <h2 class="login-title">PSI-GRO</h2>
         
-        <form onsubmit="realizarLogin(event)">
-            <div class="form-group">
-                <label>Usuário:</label>
-                <input type="text" id="user" placeholder="Ex: gestor" required>
+        <form onsubmit="processarFormulario(event)">
+            
+            <div id="bloco-email" class="form-group">
+                <label>Usuário (E-mail da compra):</label>
+                <input type="text" id="user" placeholder="Ex: gestor@empresa.com" required>
             </div>
-            <div class="form-group">
-                <label>Senha:</label>
-                <input type="password" id="pass" placeholder="••••••••" required>
+
+            <div id="msg-primeiro-acesso" style="display: none; background: #fff9e6; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border: 1px solid #ffeeba;">
+                <i class="fa-solid fa-circle-exclamation"></i> <strong>Primeiro acesso detectado!</strong><br>Crie uma senha segura para o seu sistema.
             </div>
-            <button type="submit" class="btn-primary btn-login">ENTRAR NO SISTEMA</button>
+
+            <div id="bloco-senha" class="form-group" style="display: none;">
+                <label>Sua Senha:</label>
+                <input type="password" id="pass" placeholder="••••••••">
+            </div>
+
+            <div id="bloco-nova-senha" class="form-group" style="display: none;">
+                <label>Crie sua Senha:</label>
+                <input type="password" id="nova-senha" placeholder="Mínimo 5 caracteres">
+            </div>
+
+            <button type="submit" id="btn-acao" class="btn-primary btn-login">CONTINUAR</button>
+            
+            <button type="button" id="btn-voltar" style="display:none; width: 100%; background: transparent; border: none; color: #64748b; margin-top: 15px; cursor: pointer; text-decoration: underline;" onclick="voltarParaEmail()">Voltar e trocar e-mail</button>
         </form>
-        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-light);">Acesso Restrito - Monitoramento GRO</p>
+        <p style="margin-top: 20px; font-size: 0.8rem; color: #94a3b8;">Acesso Restrito - Monitoramento GRO</p>
     </div>
-
-
 
     <script src="js-cerebro.js"></script>
     <script>
-        async function realizarLogin(event) {
-            event.preventDefault(); // Impede a página de recarregar
+        let etapaAtual = 'email';
+
+        function voltarParaEmail() {
+            etapaAtual = 'email';
+            document.getElementById('bloco-email').style.display = 'block';
+            document.getElementById('bloco-senha').style.display = 'none';
+            document.getElementById('bloco-nova-senha').style.display = 'none';
+            document.getElementById('msg-primeiro-acesso').style.display = 'none';
+            document.getElementById('btn-voltar').style.display = 'none';
+            
+            // Remove as obrigatoriedades
+            document.getElementById('pass').required = false;
+            document.getElementById('nova-senha').required = false;
+            
+            document.getElementById('btn-acao').innerHTML = 'CONTINUAR';
+        }
+
+        async function processarFormulario(event) {
+            event.preventDefault();
             
             const user = document.getElementById('user').value;
-            const pass = document.getElementById('pass').value;
-            const btn = document.querySelector('.btn-login');
-
-            // Muda o texto do botão temporariamente pra dar feedback de carregamento
+            const btn = document.getElementById('btn-acao');
             const textoOriginal = btn.innerHTML;
+            
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+
+            const formData = new FormData();
+            formData.append('user', user);
 
             try {
-                // 1. Prepara os dados para mandar pro PHP
-                const formData = new FormData();
-                formData.append('user', user);
-                formData.append('pass', pass);
+                // VERIFICA O EMAIL
+                if (etapaAtual === 'email') {
+                    formData.append('acao', 'verificar_email');
+                    const resposta = await fetch('api_login.php', { method: 'POST', body: formData });
+                    const dados = await resposta.json();
 
-                // 2. Chama o PHP lá na sua VPS
-                const resposta = await fetch('api_login.php', {
-                    method: 'POST',
-                    body: formData
-                });
+                    if (dados.sucesso) {
+                        document.getElementById('bloco-email').style.display = 'none';
+                        document.getElementById('btn-voltar').style.display = 'block';
 
-                // 3. Lê o que o PHP respondeu (o JSON de sucesso ou erro)
-                const dados = await resposta.json();
-
-                if (dados.sucesso) {
-                    // DEU CERTO! O Banco de Dados aprovou.
-                    const loader = document.getElementById('loader-overlay');
-                    const som = document.getElementById('audioLoading');
-                    
-                    // Ativa o visual e o som
-                    loader.style.display = 'flex';
-                    som.play();
-
-                    // Salva a sessão no navegador pro js-cerebro.js não te bloquear nas outras páginas
-                    localStorage.setItem('psi_gro_sessao', 'ativo');
-                    localStorage.setItem('psi_gro_email_logado', user); // Salva o email pra usar no dashboard depois
-
-                    // Aguarda 3.5 segundos antes de entrar na página principal
-                    setTimeout(() => {
-                        window.location.href = "dashboard.html";
-                    }, 3500);
-
-                } else {
-                    // DEU ERRO! (Senha ou email incorretos)
-                    alert(dados.erro || "Usuário ou senha incorretos!");
+                        if (dados.etapa === 'primeiro_acesso') {
+                            etapaAtual = 'nova_senha';
+                            document.getElementById('msg-primeiro-acesso').style.display = 'block';
+                            document.getElementById('bloco-nova-senha').style.display = 'block';
+                            document.getElementById('nova-senha').required = true;
+                            btn.innerHTML = 'SALVAR E ACESSAR';
+                        } else {
+                            etapaAtual = 'login';
+                            document.getElementById('bloco-senha').style.display = 'block';
+                            document.getElementById('pass').required = true;
+                            btn.innerHTML = 'ENTRAR NO SISTEMA';
+                        }
+                    } else {
+                        alert(dados.erro);
+                        btn.innerHTML = textoOriginal;
+                    }
                     btn.disabled = false;
-                    btn.innerHTML = textoOriginal;
-                }
 
+                // TENTA LOGAR NORMALMENTE
+                } else if (etapaAtual === 'login') {
+                    formData.append('acao', 'login');
+                    formData.append('pass', document.getElementById('pass').value);
+                    
+                    const resposta = await fetch('api_login.php', { method: 'POST', body: formData });
+                    const dados = await resposta.json();
+
+                    if (dados.sucesso) {
+                        animacaoSucesso(user);
+                    } else {
+                        alert(dados.erro);
+                        btn.disabled = false;
+                        btn.innerHTML = textoOriginal;
+                    }
+
+                // SALVA A SENHA DO PRIMEIRO ACESSO
+                } else if (etapaAtual === 'nova_senha') {
+                    const novaSenha = document.getElementById('nova-senha').value;
+                    if(novaSenha.length < 5) {
+                        alert('A senha deve ter pelo menos 5 caracteres para sua segurança.');
+                        btn.disabled = false;
+                        btn.innerHTML = textoOriginal;
+                        return;
+                    }
+                    
+                    formData.append('acao', 'nova_senha');
+                    formData.append('nova_senha', novaSenha);
+                    
+                    const resposta = await fetch('api_login.php', { method: 'POST', body: formData });
+                    const dados = await resposta.json();
+
+                    if (dados.sucesso) {
+                        animacaoSucesso(user);
+                    } else {
+                        alert(dados.erro);
+                        btn.disabled = false;
+                        btn.innerHTML = textoOriginal;
+                    }
+                }
             } catch (erro) {
-                // Erro de servidor (ex: se o PHP estiver fora do ar)
-                console.error("Erro de comunicação com o servidor:", erro);
-                alert("Erro ao tentar conectar com o banco de dados.");
+                console.error(erro);
+                alert("Erro ao conectar com o banco de dados.");
                 btn.disabled = false;
                 btn.innerHTML = textoOriginal;
             }
+        }
+
+        function animacaoSucesso(user) {
+            const loader = document.getElementById('loader-overlay');
+            const som = document.getElementById('audioLoading');
+            loader.style.display = 'flex';
+            som.play().catch(() => console.log('Áudio bloqueado pelo navegador'));
+            
+            localStorage.setItem('psi_gro_sessao', 'ativo');
+            localStorage.setItem('psi_gro_email_logado', user);
+            
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 3500);
         }
     </script>
 </body>
