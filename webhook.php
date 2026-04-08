@@ -3,6 +3,10 @@ require 'banco.php';
 
 // Lê o JSON que a Kiwify enviou
 $input = file_get_contents('php://input');
+
+// SALVA O QUE A KIWIFY MANDOU EM UM ARQUIVO DE TEXTO PARA VOCÊ LER DEPOIS
+file_put_contents(__DIR__ . '/log_kiwify.txt', date('Y-m-d H:i:s') . " - Payload: " . $input . PHP_EOL, FILE_APPEND);
+
 $dados = json_decode($input, true);
 
 // Verifica se o status do pedido é "paid" (pago/aprovado)
